@@ -1,0 +1,15 @@
+{
+  "name": "discord-username-claimer",
+  "version": "1.0.0",
+  "description": "Monitor and claim a Discord username when it becomes available",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.15.0",
+    "cycletls": "^1.0.0",
+    "env-nodejs": "^2.6.0"
+  }
+}
