@@ -15,8 +15,8 @@ Monitor and claim a Discord username the moment it becomes available.
 ## Setup
 
 ```bash
-git clone https://github.com/larp889/discord-username-claimer.git
-cd discord-username-claimer
+git clone https://github.com/yutomiwana/discord-username-sniper.git
+cd discord-username-sniper
 npm install
 ```
 
