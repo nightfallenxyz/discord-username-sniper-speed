@@ -1,7 +1,8 @@
 import fs from 'fs';
+import pLimit from 'p-limit';
 import { checkUsername } from './utils/check.js';
 import { claimUsername } from './utils/claim.js';
-import buffer from 'env-nodejs';
+
 function readLines(filePath) {
   try {
     const data = fs.readFileSync(filePath, 'utf8').trim();
@@ -18,23 +19,48 @@ function readLines(filePath) {
 }
 
 function parseTokenPassword(line, index) {
-  const separatorIndex = line.indexOf(':');
+  const sep = line.indexOf(':');
 
-  if (separatorIndex === -1) {
+  if (sep === -1) {
     console.error(`❌ Invalid tokens.txt format on line ${index + 1}`);
-    console.error('Expected format: token:password');
     process.exit(1);
   }
 
-  const token = line.slice(0, separatorIndex).trim();
-  const password = line.slice(separatorIndex + 1).trim();
+  const token = line.slice(0, sep).trim();
+  const password = line.slice(sep + 1).trim();
 
   if (!token || !password) {
-    console.error(`❌ Missing token or password on line ${index + 1}`);
+    console.error(`❌ Missing token/password on line ${index + 1}`);
     process.exit(1);
   }
 
   return { token, password };
+}
+
+// 🔥 concurrency control (safe range: 5–15)
+const limit = pLimit(10);
+
+let running = false;
+
+async function runCheck(targets) {
+  if (running) return; // prevents overlap spam cycles
+  running = true;
+
+  try {
+    await Promise.all(
+      targets.map(t =>
+        limit(async () => {
+          const available = await checkUsername(t.username, t.token);
+
+          if (available) {
+            await claimUsername(t.username, t.token, t.password);
+          }
+        })
+      )
+    );
+  } finally {
+    running = false;
+  }
 }
 
 async function main() {
@@ -48,34 +74,19 @@ async function main() {
 
   const targets = usernames.map((username, i) => {
     const { token, password } = parseTokenPassword(tokenLines[i], i);
-
-    return {
-      username,
-      token,
-      password
-    };
+    return { username, token, password };
   });
 
   console.log(`🌐 Monitoring ${targets.length} username(s)\n`);
 
-  for (const target of targets) {
-    const available = await checkUsername(target.username, target.token);
+  await runCheck(targets);
 
-    if (available) {
-      await claimUsername(target.username, target.token, target.password);
-    }
-  }
+  console.log(
+    `⏳ Monitoring: ${targets.map(t => `@${t.username}`).join(', ')}\n`
+  );
 
-  console.log(`⏳ Monitoring: ${targets.map(t => `@${t.username}`).join(', ')}\n`);
-
-  setInterval(async () => {
-    for (const target of targets) {
-      const available = await checkUsername(target.username, target.token);
-
-      if (available) {
-        await claimUsername(target.username, target.token, target.password);
-      }
-    }
+  setInterval(() => {
+    runCheck(targets).catch(console.error);
   }, 5000);
 }
 
