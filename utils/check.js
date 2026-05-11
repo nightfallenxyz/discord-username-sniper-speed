@@ -7,39 +7,29 @@ const config = JSON.parse(
 
 export async function checkUsername(username, token) {
   try {
-    const response = await axios.post(
+    const res = await axios.post(
       config.CHECK_URL,
       { username },
       {
         headers: {
-          'Authorization': token,
+          Authorization: token,
           'Content-Type': 'application/json',
           'User-Agent': config.USER_AGENT,
-          'Accept': '*/*',
-          'Accept-Language': 'en-US,en;q=0.9',
+          Accept: '*/*',
           'X-Super-Properties': config.X_SUPER_PROPERTIES,
           'X-Discord-Locale': 'en-US',
-          'Referer': 'https://discord.com/channels/@me',
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-origin',
-          'Priority': 'u=1, i',
-          'Sec-Ch-Ua': '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
-          'Sec-Ch-Ua-Mobile': '?0',
-          'Sec-Ch-Ua-Platform': '"Windows"',
-          'X-Debug-Options': 'bugReporterEnabled',
         },
-        timeout: 15000,
+        timeout: 10000,
       }
     );
 
-    if (response.status === 200 && response.data.taken === false) {
-      console.log(`✅ @${username} is available!`);
+    if (res.status === 200 && res.data?.taken === false) {
+      console.log(`✅ @${username} available`);
       return true;
     }
 
     return false;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
