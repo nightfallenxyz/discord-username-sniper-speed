@@ -7,7 +7,9 @@ const config = JSON.parse(
 
 export async function checkUsername(username, token) {
   try {
-    const res = await axios.post(
+    console.log(`🔎 Checking @${username}...`);
+
+    const response = await axios.post(
       config.CHECK_URL,
       { username },
       {
@@ -23,13 +25,21 @@ export async function checkUsername(username, token) {
       }
     );
 
-    if (res.status === 200 && res.data?.taken === false) {
-      console.log(`✅ @${username} available`);
-      return true;
+    if (response.status === 200) {
+      if (response.data?.taken === false) {
+        console.log(`🟢 @${username} is AVAILABLE`);
+        return true;
+      } else {
+        console.log(`🔴 @${username} is taken`);
+        return false;
+      }
     }
 
+    console.log(`⚠️ @${username} unexpected response`);
     return false;
-  } catch {
+
+  } catch (error) {
+    console.log(`❌ @${username} check failed`);
     return false;
   }
 }
